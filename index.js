@@ -5,6 +5,7 @@ import {
   Platform,
 } from 'react-native';
 import RNFS from 'react-native-fs';
+import RNFetchBlob from 'react-native-fetch-blob';
 
 const RNAppUpdate = NativeModules.RNAppUpdate;
 
@@ -58,8 +59,10 @@ class AppUpdate {
   }
 
   downloadApk(remote) {
-    const progress = (data) => {
-      const percentage = ((100 * data.bytesWritten) / data.contentLength) | 0;
+    const progress = (received, total) => {
+      console.warn('Written ', received);
+      console.warn('Length ', total);
+      const percentage = ((100 * received) / total) | 0;
       this.options.downloadApkProgress && this.options.downloadApkProgress(percentage);
     };
     const begin = (res) => {
@@ -69,28 +72,27 @@ class AppUpdate {
     const progressDivider = 1;
     const downloadDestPath = `${RNFS.DocumentDirectoryPath}/NewApp.apk`;
 
-    const ret = RNFS.downloadFile({
-      fromUrl: remote.apkUrl,
-      toFile: downloadDestPath,
-      begin,
-      progress,
-      background: true,
-      progressDivider
-    });
-
-    jobId = ret.jobId;
-
-    ret.promise.then((res) => {
+    begin();    
+    RNFetchBlob
+    .config({
+      // add this option that makes response data to be stored as a file,
+      // this is much more performant.
+      path: downloadDestPath
+    })
+    .fetch('GET', remote.apkUrl, {
+      //some headers ..
+    })
+    .progress((received, total) => progress(received, total))
+    .then((res) => {
+      // the temp file path
       console.log("downloadApkEnd");
       this.options.downloadApkEnd && this.options.downloadApkEnd();
       RNAppUpdate.installApk(downloadDestPath);
 
-      jobId = -1;
-    }).catch((err) => {
-      this.downloadApkError(err);
-
-      jobId = -1;
-    });
+    })
+    .catch((err) => {
+      this.downloadApkError(err);      
+    })
   }
 
   getAppStoreVersion() {
