@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
+import android.support.v4.content.FileProvider;
 
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
@@ -55,9 +57,21 @@ public class RNAppUpdate extends ReactContextBaseJavaModule {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.setDataAndType(Uri.parse("file://" + file), "application/vnd.android.package-archive");
-        getCurrentActivity().startActivity(intent);
+            
+        File toInstall = new File(file);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            Uri apkUri = FileProvider.getUriForFile(getCurrentActivity(),"com.viking.provider", toInstall);
+            Intent intent = new Intent(Intent.ACTION_INSTALL_PACKAGE);
+            intent.setData(apkUri);
+            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            getCurrentActivity().startActivity(intent);
+        } else {
+            Uri apkUri = Uri.fromFile(toInstall);
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getCurrentActivity().startActivity(intent);
+        }
     }
 }

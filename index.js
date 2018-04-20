@@ -60,8 +60,6 @@ class AppUpdate {
 
   downloadApk(remote) {
     const progress = (received, total) => {
-      console.warn('Written ', received);
-      console.warn('Length ', total);
       const percentage = ((100 * received) / total) | 0;
       this.options.downloadApkProgress && this.options.downloadApkProgress(percentage);
     };
@@ -70,7 +68,7 @@ class AppUpdate {
       this.options.downloadApkStart && this.options.downloadApkStart();
     };
     const progressDivider = 1;
-    const downloadDestPath = `${RNFS.DocumentDirectoryPath}/NewApp.apk`;
+    const downloadDestPath = `${RNFetchBlob.fs.dirs.DocumentDir}/NewApp.apk`;
 
     begin();    
     RNFetchBlob
